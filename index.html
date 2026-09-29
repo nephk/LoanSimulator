@@ -16,6 +16,7 @@
       </header>
 
       <form id="loan-form" class="loan-form" novalidate>
+        <div class="loan-form__top">
         <section class="loan-section" aria-labelledby="loan-overview-title">
           <h2 id="loan-overview-title" class="loan-section__title">基本条件</h2>
           <div class="loan-fields">
@@ -52,6 +53,7 @@
           </div>
         </section>
 
+                <div class="loan-form__borrowing">
         <section class="loan-section borrower-section" data-borrower="primary" aria-labelledby="primary-title">
           <h2 id="primary-title" class="loan-section__title">本人の借入条件</h2>
           <div class="loan-fields">
@@ -132,6 +134,8 @@
           </div>
         </section>
 
+                </div>
+
         <section class="loan-section" aria-labelledby="bonus-title">
           <h2 id="bonus-title" class="loan-section__title">ボーナス返済</h2>
           <label class="loan-choice">
@@ -162,6 +166,8 @@
           </div>
         </section>
 
+        </div>
+
         <div class="loan-actions">
           <button id="reset-button" class="dads-button" data-size="md" data-type="outline" type="button">初期化</button>
         </div>
@@ -172,8 +178,8 @@
           <h2 id="result-title" class="loan-section__title">計算結果</h2>
           <p>総返済額: <span id="summary-total-payment">―</span>円</p>
           <p>月々返済額（初回）: <span id="summary-first-month-payment">―</span>円</p>
-          <div><canvas id="balance-chart" aria-label="借入残高推移グラフ"></canvas></div>
-          <div><canvas id="yearly-chart" aria-label="年間返済額グラフ"></canvas></div>
+          <div class="chart-container"><canvas id="balance-chart" aria-label="借入残高推移グラフ"></canvas></div>
+          <div class="chart-container"><canvas id="yearly-chart" aria-label="年間返済額グラフ"></canvas></div>
         </section>
       </form>
     </main>

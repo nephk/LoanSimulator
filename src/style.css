@@ -984,6 +984,23 @@ body {
   gap: 24px;
 }
 
+.loan-form__top,
+.loan-form__borrowing {
+  display: grid;
+  gap: 24px;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .loan-form__top {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .loan-section {
   margin: 0;
   padding: 24px;
