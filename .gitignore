@@ -2,3 +2,5 @@
 node_modules/
 design-system-example-components-html/
 .playwright-mcp/
+.playwright-browsers/
+tests/
