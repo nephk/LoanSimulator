@@ -35,6 +35,7 @@ function validateNonNegative(value, name) {
 }
 
 function normalizeBonus(bonus = {}) {
+  bonus = bonus ?? {};
   const enabled = Boolean(bonus.enabled);
   if (!enabled) {
     return { enabled: false, amountPerPayment: 0, months: [...DEFAULT_BONUS_MONTHS] };
@@ -44,8 +45,8 @@ function normalizeBonus(bonus = {}) {
   validateNonNegative(amountPerPayment, 'bonus.amountPerPayment');
 
   const months = bonus.months === undefined ? DEFAULT_BONUS_MONTHS : bonus.months;
-  if (!Array.isArray(months) || months.length !== 2 || months.some((month) => !Number.isInteger(month) || month < 1 || month > 12)) {
-    throw new Error('bonus.months must contain two month numbers between 1 and 12');
+  if (!Array.isArray(months) || months.length !== 2 || months.some((month) => !Number.isInteger(month) || month < 1 || month > 12) || months[0] === months[1]) {
+    throw new Error('bonus.months must contain two different month numbers between 1 and 12');
   }
 
   return { enabled: true, amountPerPayment, months: [...months] };
@@ -118,7 +119,8 @@ function simulateBorrower(borrower, termYears, bonus) {
   const totalMonths = termYears * MONTHS_PER_YEAR;
   const principalYen = roundYen(borrower.principal);
   let balance = borrower.principal;
-  let displayedPrincipalTotal = 0;
+  let trueCumulativePrincipal = 0;
+  let previousRoundedCumulative = 0;
   let previousSegment;
   let scheduledPayment = 0;
   let scheduledPrincipal = 0;
@@ -147,27 +149,24 @@ function simulateBorrower(borrower, termYears, bonus) {
       : 0;
 
     principalPaid = Math.min(principalPaid + bonusPayment, balance);
-    const payment = interest + principalPaid;
     balance = Math.max(0, balance - principalPaid);
 
-    const interestPaid = roundYen(interest);
-    let paymentPaid = roundYen(payment);
-    let displayedPrincipal = paymentPaid - interestPaid;
+    // Cumulative rounding keeps each displayed principal payment non-negative
+    // while making the cumulative displayed total match the true total.
+    trueCumulativePrincipal += principalPaid;
+    const roundedCumulativePrincipal = Math.round(trueCumulativePrincipal);
+    const displayedPrincipal = roundedCumulativePrincipal - previousRoundedCumulative;
+    previousRoundedCumulative = roundedCumulativePrincipal;
 
-    // When the loan reaches zero (or at the scheduled final month), make the
-    // displayed principal total exactly equal the original yen principal.
-    if (balance === 0 || monthIndex === totalMonths) {
-      displayedPrincipal = principalYen - displayedPrincipalTotal;
-      paymentPaid = displayedPrincipal + interestPaid;
-    }
-    displayedPrincipalTotal += displayedPrincipal;
+    const interestPaid = roundYen(interest);
+    const paymentPaid = interestPaid + displayedPrincipal;
 
     records.push({
       monthIndex,
       payment: paymentPaid,
       principalPaid: displayedPrincipal,
       interestPaid,
-      balance: Math.max(0, principalYen - displayedPrincipalTotal),
+      balance: Math.max(0, principalYen - previousRoundedCumulative),
     });
   }
 

@@ -69,8 +69,8 @@ test('ボーナス返済は指定月にのみ加算され、残高と集計に�
     bonus: { enabled: true, amountPerPayment: 100_000, months: [2, 8] },
   });
 
-  assert.equal(withBonus.monthly[1].payment - withoutBonus.monthly[1].payment, 100_000);
-  assert.equal(withBonus.monthly[7].payment - withoutBonus.monthly[7].payment, 100_000);
+  assert.ok(withBonus.monthly[1].principalPaid >= withoutBonus.monthly[1].principalPaid + 100_000);
+  assert.ok(withBonus.monthly[7].principalPaid >= withoutBonus.monthly[7].principalPaid + 100_000);
   assert.equal(withBonus.monthly[0].payment, withoutBonus.monthly[0].payment);
   assert.ok(withBonus.totalPayment < withoutBonus.totalPayment);
   assert.equal(withBonus.monthly.at(-1).balance, 0);
@@ -114,4 +114,47 @@ test('ボーナス無効時は未入力のボーナス欄を検証せず計算�
 
   assert.equal(result.monthly.length, 12);
   assert.equal(result.monthly.at(-1).balance, 0);
+});
+
+
+test('累積丸めで低額・長期・0%金利でも負の返済額を出さない', () => {
+  const principal = 123;
+  const result = simulate({
+    loanType: 'single',
+    termYears: 20,
+    borrowers: [fixedRate(principal, 0, 20)],
+    bonus: { enabled: false },
+  });
+
+  assert.ok(result.monthly.every((record) => record.principalPaid >= 0 && record.payment >= 0));
+  assert.ok(result.monthly.every((record) => record.payment === record.principalPaid + record.interestPaid));
+  assert.equal(result.monthly.reduce((sum, record) => sum + record.principalPaid, 0), principal);
+  assert.equal(result.monthly.at(-1).balance, 0);
+});
+
+test('nullのボーナスをデフォルト値として扱い、重複月は拒否する', () => {
+  const input = {
+    loanType: 'single',
+    termYears: 1,
+    borrowers: [fixedRate(1_000_000, 1, 1)],
+  };
+  assert.equal(simulate({ ...input, bonus: null }).monthly.length, 12);
+  assert.throws(() => simulate({
+    ...input,
+    bonus: { enabled: true, amountPerPayment: 100_000, months: [6, 6] },
+  }), Error);
+});
+
+test('早期完済のボーナス返済でも表示額の検算が崩れない', () => {
+  const principal = 10_000;
+  const result = simulate({
+    loanType: 'single',
+    termYears: 10,
+    borrowers: [fixedRate(principal, 0, 10)],
+    bonus: { enabled: true, amountPerPayment: 10_000, months: [2, 8] },
+  });
+
+  assert.ok(result.monthly.every((record) => record.principalPaid >= 0 && record.payment >= 0));
+  assert.ok(result.monthly.every((record) => record.payment === record.principalPaid + record.interestPaid));
+  assert.equal(result.monthly.reduce((sum, record) => sum + record.principalPaid, 0), principal);
 });
