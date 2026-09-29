@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>住宅ローン返済シミュレーター</title>
+    <link rel="stylesheet" href="./src/style.css">
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <main class="loan-app">
+      <header class="loan-app__header">
+        <h1 class="loan-app__title">住宅ローン返済シミュレーター</h1>
+        <p class="loan-app__lead">借入条件を入力すると、返済スケジュールを自動計算します。</p>
+      </header>
+
+      <form id="loan-form" class="loan-form" novalidate>
+        <section class="loan-section" aria-labelledby="loan-overview-title">
+          <h2 id="loan-overview-title" class="loan-section__title">基本条件</h2>
+          <div class="loan-fields">
+            <fieldset>
+              <legend class="dads-form-control-label__label">ローン形式</legend>
+              <div class="loan-radio-group">
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio">
+                      <input class="dads-radio__input" type="radio" name="loanType" value="single" checked>
+                    </span>
+                  </span>
+                  単身ローン
+                </label>
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio">
+                      <input class="dads-radio__input" type="radio" name="loanType" value="pair">
+                    </span>
+                  </span>
+                  ペアローン
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="term-years">借入期間（年）</label>
+              <div>
+                <span class="dads-input-text">
+                  <input id="term-years" class="dads-input-text__input" type="number" data-size="md" name="termYears" min="1" step="1" value="35">
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="loan-section borrower-section" data-borrower="primary" aria-labelledby="primary-title">
+          <h2 id="primary-title" class="loan-section__title">本人の借入条件</h2>
+          <div class="loan-fields">
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="primary-principal">借入金額（円）</label>
+              <div>
+                <span class="dads-input-text">
+                  <input id="primary-principal" class="dads-input-text__input" type="number" data-size="md" data-field="principal" min="1" step="1" value="30000000">
+                </span>
+              </div>
+            </div>
+
+            <fieldset>
+              <legend class="dads-form-control-label__label">返済方式</legend>
+              <div class="loan-radio-group">
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="primary-repaymentType" value="equalPayment" checked></span>
+                  </span>
+                  元利均等
+                </label>
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="primary-repaymentType" value="equalPrincipal"></span>
+                  </span>
+                  元金均等
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="rate-segment-editor" data-borrower="primary">
+              <h3 class="loan-section__title">金利区間</h3>
+              <div class="rate-segments" data-rate-segments></div>
+              <div class="rate-segments__actions">
+                <button class="dads-button" data-size="sm" data-type="outline" type="button" data-action="add-segment">金利区間を追加</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="loan-section borrower-section" data-borrower="secondary" aria-labelledby="secondary-title" hidden>
+          <h2 id="secondary-title" class="loan-section__title">連帯債務者の借入条件</h2>
+          <div class="loan-fields">
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="secondary-principal">借入金額（円）</label>
+              <div>
+                <span class="dads-input-text">
+                  <input id="secondary-principal" class="dads-input-text__input" type="number" data-size="md" data-field="principal" min="1" step="1" value="30000000">
+                </span>
+              </div>
+            </div>
+
+            <fieldset>
+              <legend class="dads-form-control-label__label">返済方式</legend>
+              <div class="loan-radio-group">
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="secondary-repaymentType" value="equalPayment" checked></span>
+                  </span>
+                  元利均等
+                </label>
+                <label class="loan-choice">
+                  <span class="dads-radio" data-size="sm">
+                    <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="secondary-repaymentType" value="equalPrincipal"></span>
+                  </span>
+                  元金均等
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="rate-segment-editor" data-borrower="secondary">
+              <h3 class="loan-section__title">金利区間</h3>
+              <div class="rate-segments" data-rate-segments></div>
+              <div class="rate-segments__actions">
+                <button class="dads-button" data-size="sm" data-type="outline" type="button" data-action="add-segment">金利区間を追加</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="loan-section" aria-labelledby="bonus-title">
+          <h2 id="bonus-title" class="loan-section__title">ボーナス返済</h2>
+          <label class="loan-choice">
+            <span class="dads-checkbox" data-size="md">
+              <span class="dads-checkbox__checkbox"><input id="bonus-enabled" class="dads-checkbox__input" type="checkbox"></span>
+            </span>
+            ボーナス返済を行う
+          </label>
+          <div id="bonus-fields" class="bonus-fields loan-fields loan-fields--inline" hidden>
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="bonus-amount">加算額（1回あたり・円）</label>
+              <div>
+                <span class="dads-input-text"><input id="bonus-amount" class="dads-input-text__input" type="number" data-size="md" min="0" step="1" value="0"></span>
+              </div>
+            </div>
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="bonus-month-1">返済月1</label>
+              <div>
+                <span class="dads-input-text"><input id="bonus-month-1" class="dads-input-text__input" type="number" data-size="md" min="1" max="12" step="1" value="8"></span>
+              </div>
+            </div>
+            <div class="dads-form-control-label" data-size="md">
+              <label class="dads-form-control-label__label" for="bonus-month-2">返済月2</label>
+              <div>
+                <span class="dads-input-text"><input id="bonus-month-2" class="dads-input-text__input" type="number" data-size="md" min="1" max="12" step="1" value="2"></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="loan-actions">
+          <button id="reset-button" class="dads-button" data-size="md" data-type="outline" type="button">初期化</button>
+        </div>
+
+        <div id="form-error" class="loan-error" role="alert" hidden></div>
+
+        <section class="loan-section" aria-labelledby="result-title">
+          <h2 id="result-title" class="loan-section__title">計算結果（デバッグ表示）</h2>
+          <pre id="result-debug" class="result-debug">計算中…</pre>
+        </section>
+      </form>
+    </main>
+  </body>
+</html>
