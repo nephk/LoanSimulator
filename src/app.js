@@ -1,4 +1,5 @@
 import { simulate } from './amortization.js';
+import { renderBalanceChart, renderYearlyChart } from './charts.js';
 
 const DEFAULTS = Object.freeze({
   loanType: 'single',
@@ -12,7 +13,10 @@ const DEFAULTS = Object.freeze({
 });
 
 const form = document.querySelector('#loan-form');
-const resultDebug = document.querySelector('#result-debug');
+const summaryTotalPayment = document.querySelector('#summary-total-payment');
+const summaryFirstMonthPayment = document.querySelector('#summary-first-month-payment');
+const balanceChart = document.querySelector('#balance-chart');
+const yearlyChart = document.querySelector('#yearly-chart');
 const formError = document.querySelector('#form-error');
 const secondarySection = document.querySelector('[data-borrower="secondary"].borrower-section');
 const bonusFields = document.querySelector('#bonus-fields');
@@ -120,15 +124,15 @@ function buildSimulationInput() {
 function calculate() {
   try {
     const result = simulate(buildSimulationInput());
-    resultDebug.textContent = JSON.stringify({
-      totalPayment: result.totalPayment,
-      monthlyCount: result.monthly.length,
-      yearlyCount: result.yearly.length,
-    }, null, 2);
+    summaryTotalPayment.textContent = result.totalPayment.toLocaleString('ja-JP');
+    summaryFirstMonthPayment.textContent = result.monthly[0].payment.toLocaleString('ja-JP');
+    renderBalanceChart(balanceChart, result.monthly);
+    renderYearlyChart(yearlyChart, result.yearly);
     formError.hidden = true;
     formError.textContent = '';
   } catch (error) {
-    resultDebug.textContent = '';
+    summaryTotalPayment.textContent = '―';
+    summaryFirstMonthPayment.textContent = '―';
     formError.textContent = error instanceof Error ? error.message : '計算できませんでした。入力値を確認してください。';
     formError.hidden = false;
   }

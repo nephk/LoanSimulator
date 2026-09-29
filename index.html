@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>住宅ローン返済シミュレーター</title>
     <link rel="stylesheet" href="./src/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script type="module" src="./src/app.js"></script>
   </head>
   <body>
@@ -168,8 +169,11 @@
         <div id="form-error" class="loan-error" role="alert" hidden></div>
 
         <section class="loan-section" aria-labelledby="result-title">
-          <h2 id="result-title" class="loan-section__title">計算結果（デバッグ表示）</h2>
-          <pre id="result-debug" class="result-debug">計算中…</pre>
+          <h2 id="result-title" class="loan-section__title">計算結果</h2>
+          <p>総返済額: <span id="summary-total-payment">―</span>円</p>
+          <p>月々返済額（初回）: <span id="summary-first-month-payment">―</span>円</p>
+          <div><canvas id="balance-chart" aria-label="借入残高推移グラフ"></canvas></div>
+          <div><canvas id="yearly-chart" aria-label="年間返済額グラフ"></canvas></div>
         </section>
       </form>
     </main>
