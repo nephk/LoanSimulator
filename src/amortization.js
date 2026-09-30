@@ -1,8 +1,8 @@
 /**
  * @typedef {{ years: number, annualRatePercent: number }} RateSegment
- * @typedef {{ principal: number, repaymentType: 'equalPayment'|'equalPrincipal', rateSegments: RateSegment[] }} BorrowerInput
+ * @typedef {{ principal: number, repaymentType: 'equalPayment'|'equalPrincipal' }} BorrowerInput
  * @typedef {{ enabled: boolean, amountPerPayment: number, months?: number[] }} BonusPayment
- * @typedef {{ loanType: 'single'|'pair', termYears: number, borrowers: BorrowerInput[], bonus: BonusPayment }} SimulationInput
+ * @typedef {{ loanType: 'single'|'pair', termYears: number, rateSegments: RateSegment[], borrowers: BorrowerInput[], bonus: BonusPayment }} SimulationInput
  * @typedef {{ monthIndex: number, payment: number, principalPaid: number, interestPaid: number, balance: number }} MonthlyRecord
  * @typedef {{ totalPayment: number, monthly: MonthlyRecord[], yearly: { year: number, totalPayment: number, principalPaid: number, interestPaid: number }[] }} SimulationResult
  *
@@ -18,20 +18,20 @@ const DEFAULT_BONUS_MONTHS = [8, 2];
 
 const roundYen = (value) => Math.round(value);
 
-function assertFiniteNumber(value, name) {
+function assertFiniteNumber(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`${name} must be a finite number`);
+    throw new Error('入力値が数値として認識できません。');
   }
 }
 
-function validatePositive(value, name) {
-  assertFiniteNumber(value, name);
-  if (value <= 0) throw new Error(`${name} must be greater than 0`);
+function validatePositive(value) {
+  assertFiniteNumber(value);
+  if (value <= 0) throw new Error('0より大きい値を入力してください。');
 }
 
-function validateNonNegative(value, name) {
-  assertFiniteNumber(value, name);
-  if (value < 0) throw new Error(`${name} must be greater than or equal to 0`);
+function validateNonNegative(value) {
+  assertFiniteNumber(value);
+  if (value < 0) throw new Error('0以上の値を入力してください。');
 }
 
 function normalizeBonus(bonus = {}) {
@@ -42,54 +42,54 @@ function normalizeBonus(bonus = {}) {
   }
 
   const amountPerPayment = bonus.amountPerPayment === undefined ? 0 : bonus.amountPerPayment;
-  validateNonNegative(amountPerPayment, 'bonus.amountPerPayment');
+  validateNonNegative(amountPerPayment);
 
   const months = bonus.months === undefined ? DEFAULT_BONUS_MONTHS : bonus.months;
   if (!Array.isArray(months) || months.length !== 2 || months.some((month) => !Number.isInteger(month) || month < 1 || month > 12) || months[0] === months[1]) {
-    throw new Error('bonus.months must contain two different month numbers between 1 and 12');
+    throw new Error('ボーナス返済月は1月から12月の異なる2つを指定してください。');
   }
 
   return { enabled: true, amountPerPayment, months: [...months] };
 }
 
-function validateRateSegments(rateSegments, termYears, name) {
+function validateRateSegments(rateSegments, termYears) {
   if (!Array.isArray(rateSegments) || rateSegments.length === 0) {
-    throw new Error(`${name} must contain at least one rate segment`);
+    throw new Error('金利区間を1つ以上入力してください。');
   }
 
   let yearsTotal = 0;
   for (const [index, segment] of rateSegments.entries()) {
-    validatePositive(segment?.years, `${name}[${index}].years`);
+    validatePositive(segment?.years);
     if (!Number.isInteger(segment.years)) {
-      throw new Error(`${name}[${index}].years must be a whole number`);
+      throw new Error('金利区間の年数は整数で入力してください。');
     }
-    validateNonNegative(segment.annualRatePercent, `${name}[${index}].annualRatePercent`);
+    validateNonNegative(segment.annualRatePercent);
     yearsTotal += segment.years;
   }
 
   if (yearsTotal !== termYears) {
-    throw new Error(`${name} years must add up to termYears`);
+    throw new Error('金利区間の年数の合計が借入期間と一致していません。');
   }
 }
 
 function validateInput(input) {
   if (!input || (input.loanType !== 'single' && input.loanType !== 'pair')) {
-    throw new Error("loanType must be 'single' or 'pair'");
+    throw new Error('ローン形式を選択してください。');
   }
-  validatePositive(input.termYears, 'termYears');
-  if (!Number.isInteger(input.termYears)) throw new Error('termYears must be a whole number');
+  validatePositive(input.termYears);
+  if (!Number.isInteger(input.termYears)) throw new Error('借入期間は整数で入力してください。');
 
   const expectedBorrowers = input.loanType === 'single' ? 1 : 2;
   if (!Array.isArray(input.borrowers) || input.borrowers.length !== expectedBorrowers) {
-    throw new Error(`borrowers must contain ${expectedBorrowers} item(s)`);
+    throw new Error('借入条件の入力数がローン形式と一致していません。');
   }
 
+  validateRateSegments(input.rateSegments, input.termYears);
   input.borrowers.forEach((borrower, index) => {
-    validatePositive(borrower?.principal, `borrowers[${index}].principal`);
+    validatePositive(borrower?.principal);
     if (borrower.repaymentType !== 'equalPayment' && borrower.repaymentType !== 'equalPrincipal') {
-      throw new Error(`borrowers[${index}].repaymentType is invalid`);
+      throw new Error('返済方式を選択してください。');
     }
-    validateRateSegments(borrower.rateSegments, input.termYears, `borrowers[${index}].rateSegments`);
   });
 
   return normalizeBonus(input.bonus);
@@ -115,7 +115,7 @@ function segmentAtMonth(rateSegments, monthIndex) {
   return rateSegments[rateSegments.length - 1];
 }
 
-function simulateBorrower(borrower, termYears, bonus) {
+function simulateBorrower(borrower, rateSegments, termYears, bonus) {
   const totalMonths = termYears * MONTHS_PER_YEAR;
   const principalYen = roundYen(borrower.principal);
   let balance = borrower.principal;
@@ -127,7 +127,7 @@ function simulateBorrower(borrower, termYears, bonus) {
   const records = [];
 
   for (let monthIndex = 1; monthIndex <= totalMonths; monthIndex += 1) {
-    const segment = segmentAtMonth(borrower.rateSegments, monthIndex);
+    const segment = segmentAtMonth(rateSegments, monthIndex);
     const rate = monthlyRate(segment.annualRatePercent);
     const remainingMonths = totalMonths - monthIndex + 1;
 
@@ -198,7 +198,7 @@ function aggregateMonthly(recordsByBorrower) {
  */
 export function simulate(input) {
   const bonus = validateInput(input);
-  const borrowerSchedules = input.borrowers.map((borrower) => simulateBorrower(borrower, input.termYears, bonus));
+  const borrowerSchedules = input.borrowers.map((borrower) => simulateBorrower(borrower, input.rateSegments, input.termYears, bonus));
   const monthly = aggregateMonthly(borrowerSchedules);
   const yearly = Array.from({ length: input.termYears }, (_, yearIndex) => {
     const records = monthly.slice(yearIndex * MONTHS_PER_YEAR, (yearIndex + 1) * MONTHS_PER_YEAR);

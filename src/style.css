@@ -958,7 +958,7 @@ body {
 }
 
 .loan-app {
-  width: min(100% - 32px, 960px);
+  width: min(100% - 32px, 1280px);
   margin: 0 auto;
   padding: 32px 0 64px;
 }
@@ -1037,9 +1037,25 @@ body {
 
 .loan-choice {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  min-width: 0;
   cursor: pointer;
+}
+
+.loan-choice__label {
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.loan-choice__hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-neutral-solid-gray-600, #666);
+  font-size: 0.875rem;
+  font-weight: normal;
+  line-height: 1.4;
 }
 
 .rate-segments {
