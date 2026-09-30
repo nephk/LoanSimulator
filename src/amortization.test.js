@@ -2,10 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { simulate } from './amortization.js';
 
-const fixedRate = (principal, annualRatePercent, termYears, repaymentType = 'equalPayment') => ({
+const fixedRate = (principal, repaymentType = 'equalPayment') => ({
   principal,
   repaymentType,
-  rateSegments: [{ years: termYears, annualRatePercent }],
 });
 
 function pmt(principal, annualRatePercent, termYears) {
@@ -18,7 +17,8 @@ test('単身・単一金利の元利均等返済はPMTと一致し、最終残�
   const result = simulate({
     loanType: 'single',
     termYears: 1,
-    borrowers: [fixedRate(1_000_000, 1.2, 1)],
+    rateSegments: [{ years: 1, annualRatePercent: 1.2 }],
+    borrowers: [fixedRate(1_000_000)],
     bonus: { enabled: false },
   });
 
@@ -29,20 +29,13 @@ test('単身・単一金利の元利均等返済はPMTと一致し、最終残�
   assert.equal(result.totalPayment, result.yearly[0].totalPayment);
 });
 
-test('ペアローン・期間分割金利は各人を独立計算して月ごとに合算する', () => {
-  const borrowerA = {
-    principal: 12_000_000,
-    repaymentType: 'equalPayment',
-    rateSegments: [{ years: 1, annualRatePercent: 1 }, { years: 1, annualRatePercent: 2 }],
-  };
-  const borrowerB = {
-    principal: 8_000_000,
-    repaymentType: 'equalPrincipal',
-    rateSegments: [{ years: 1, annualRatePercent: 0.8 }, { years: 1, annualRatePercent: 1.8 }],
-  };
-  const pair = simulate({ loanType: 'pair', termYears: 2, borrowers: [borrowerA, borrowerB], bonus: { enabled: false } });
-  const individualA = simulate({ loanType: 'single', termYears: 2, borrowers: [borrowerA], bonus: { enabled: false } });
-  const individualB = simulate({ loanType: 'single', termYears: 2, borrowers: [borrowerB], bonus: { enabled: false } });
+test('ペアローン・共通の期間分割金利は各人を独立計算して月ごとに合算する', () => {
+  const rateSegments = [{ years: 1, annualRatePercent: 1 }, { years: 1, annualRatePercent: 2 }];
+  const borrowerA = fixedRate(12_000_000);
+  const borrowerB = fixedRate(8_000_000, 'equalPrincipal');
+  const pair = simulate({ loanType: 'pair', termYears: 2, rateSegments, borrowers: [borrowerA, borrowerB], bonus: { enabled: false } });
+  const individualA = simulate({ loanType: 'single', termYears: 2, rateSegments, borrowers: [borrowerA], bonus: { enabled: false } });
+  const individualB = simulate({ loanType: 'single', termYears: 2, rateSegments, borrowers: [borrowerB], bonus: { enabled: false } });
 
   assert.equal(pair.monthly.length, 24);
   pair.monthly.forEach((record, index) => {
@@ -56,18 +49,14 @@ test('ペアローン・期間分割金利は各人を独立計算して月ご�
 });
 
 test('ボーナス返済は指定月にのみ加算され、残高と集計に反映される', () => {
-  const withoutBonus = simulate({
+  const input = {
     loanType: 'single',
     termYears: 2,
-    borrowers: [fixedRate(2_400_000, 1.2, 2)],
-    bonus: { enabled: false },
-  });
-  const withBonus = simulate({
-    loanType: 'single',
-    termYears: 2,
-    borrowers: [fixedRate(2_400_000, 1.2, 2)],
-    bonus: { enabled: true, amountPerPayment: 100_000, months: [2, 8] },
-  });
+    rateSegments: [{ years: 2, annualRatePercent: 1.2 }],
+    borrowers: [fixedRate(2_400_000)],
+  };
+  const withoutBonus = simulate({ ...input, bonus: { enabled: false } });
+  const withBonus = simulate({ ...input, bonus: { enabled: true, amountPerPayment: 100_000, months: [2, 8] } });
 
   assert.ok(withBonus.monthly[1].principalPaid >= withoutBonus.monthly[1].principalPaid + 100_000);
   assert.ok(withBonus.monthly[7].principalPaid >= withoutBonus.monthly[7].principalPaid + 100_000);
@@ -78,29 +67,27 @@ test('ボーナス返済は指定月にのみ加算され、残高と集計に�
 });
 
 test('入力値を検証し、不正な値はErrorを投げる', () => {
-  const base = { loanType: 'single', termYears: 1, borrowers: [fixedRate(1_000_000, 1, 1)], bonus: { enabled: false } };
+  const base = { loanType: 'single', termYears: 1, rateSegments: [{ years: 1, annualRatePercent: 1 }], borrowers: [fixedRate(1_000_000)], bonus: { enabled: false } };
   assert.throws(() => simulate({ ...base, termYears: 0 }), Error);
-  assert.throws(() => simulate({ ...base, borrowers: [fixedRate(0, 1, 1)] }), Error);
-  assert.throws(() => simulate({ ...base, borrowers: [fixedRate(1_000_000, -1, 1)] }), Error);
-  assert.throws(() => simulate({ ...base, borrowers: [fixedRate(1_000_000, 1, 2)] }), Error);
+  assert.throws(() => simulate({ ...base, borrowers: [fixedRate(0)] }), Error);
+  assert.throws(() => simulate({ ...base, rateSegments: [{ years: 1, annualRatePercent: -1 }] }), Error);
+  assert.throws(() => simulate({ ...base, rateSegments: [{ years: 2, annualRatePercent: 1 }] }), Error);
 });
-
 
 test('各月の金額が整合し、元金合計と残高推移が円単位で一致する', () => {
   const principal = 3_333_333;
   const result = simulate({
     loanType: 'single',
     termYears: 5,
-    borrowers: [fixedRate(principal, 1.37, 5, 'equalPrincipal')],
+    rateSegments: [{ years: 5, annualRatePercent: 1.37 }],
+    borrowers: [fixedRate(principal, 'equalPrincipal')],
     bonus: { enabled: false },
   });
 
   assert.equal(result.monthly.reduce((sum, record) => sum + record.principalPaid, 0), principal);
   result.monthly.forEach((record, index) => {
     assert.equal(record.payment, record.principalPaid + record.interestPaid);
-    if (index > 0) {
-      assert.equal(record.balance, result.monthly[index - 1].balance - record.principalPaid);
-    }
+    if (index > 0) assert.equal(record.balance, result.monthly[index - 1].balance - record.principalPaid);
   });
 });
 
@@ -108,7 +95,8 @@ test('ボーナス無効時は未入力のボーナス欄を検証せず計算�
   const result = simulate({
     loanType: 'single',
     termYears: 1,
-    borrowers: [fixedRate(1_000_000, 1.2, 1)],
+    rateSegments: [{ years: 1, annualRatePercent: 1.2 }],
+    borrowers: [fixedRate(1_000_000)],
     bonus: { enabled: false, amountPerPayment: Number.NaN, months: [0] },
   });
 
@@ -116,13 +104,13 @@ test('ボーナス無効時は未入力のボーナス欄を検証せず計算�
   assert.equal(result.monthly.at(-1).balance, 0);
 });
 
-
 test('累積丸めで低額・長期・0%金利でも負の返済額を出さない', () => {
   const principal = 123;
   const result = simulate({
     loanType: 'single',
     termYears: 20,
-    borrowers: [fixedRate(principal, 0, 20)],
+    rateSegments: [{ years: 20, annualRatePercent: 0 }],
+    borrowers: [fixedRate(principal)],
     bonus: { enabled: false },
   });
 
@@ -136,7 +124,8 @@ test('nullのボーナスをデフォルト値として扱い、重複月は拒�
   const input = {
     loanType: 'single',
     termYears: 1,
-    borrowers: [fixedRate(1_000_000, 1, 1)],
+    rateSegments: [{ years: 1, annualRatePercent: 1 }],
+    borrowers: [fixedRate(1_000_000)],
   };
   assert.equal(simulate({ ...input, bonus: null }).monthly.length, 12);
   assert.throws(() => simulate({
@@ -150,7 +139,8 @@ test('早期完済のボーナス返済でも表示額の検算が崩れない',
   const result = simulate({
     loanType: 'single',
     termYears: 10,
-    borrowers: [fixedRate(principal, 0, 10)],
+    rateSegments: [{ years: 10, annualRatePercent: 0 }],
+    borrowers: [fixedRate(principal)],
     bonus: { enabled: true, amountPerPayment: 10_000, months: [2, 8] },
   });
 

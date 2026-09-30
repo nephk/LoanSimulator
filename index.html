@@ -29,7 +29,7 @@
                       <input class="dads-radio__input" type="radio" name="loanType" value="single" checked>
                     </span>
                   </span>
-                  単身ローン
+                  <span class="loan-choice__label">単身ローン</span>
                 </label>
                 <label class="loan-choice">
                   <span class="dads-radio" data-size="sm">
@@ -37,7 +37,7 @@
                       <input class="dads-radio__input" type="radio" name="loanType" value="pair">
                     </span>
                   </span>
-                  ペアローン
+                  <span class="loan-choice__label">ペアローン</span> <span class="loan-choice__hint">夫婦などが別々に借り入れ、それぞれ返済する方式</span>
                 </label>
               </div>
             </fieldset>
@@ -48,6 +48,14 @@
                 <span class="dads-input-text">
                   <input id="term-years" class="dads-input-text__input" type="number" data-size="md" name="termYears" min="1" step="1" value="35">
                 </span>
+              </div>
+            </div>
+
+            <div class="rate-segment-editor" role="group" aria-labelledby="rate-segment-heading">
+              <h3 id="rate-segment-heading" class="loan-section__title">金利区間</h3>
+              <div class="rate-segments" data-rate-segments-shared></div>
+              <div class="rate-segments__actions">
+                <button class="dads-button" data-size="sm" data-type="outline" type="button" data-action="add-segment">金利区間を追加</button>
               </div>
             </div>
           </div>
@@ -61,7 +69,7 @@
               <label class="dads-form-control-label__label" for="primary-principal">借入金額（円）</label>
               <div>
                 <span class="dads-input-text">
-                  <input id="primary-principal" class="dads-input-text__input" type="number" data-size="md" data-field="principal" min="1" step="1" value="30000000">
+                  <input id="primary-principal" class="dads-input-text__input" type="text" inputmode="numeric" data-size="md" data-field="principal" min="1" step="1" value="30000000">
                 </span>
               </div>
             </div>
@@ -73,24 +81,17 @@
                   <span class="dads-radio" data-size="sm">
                     <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="primary-repaymentType" value="equalPayment" checked></span>
                   </span>
-                  元利均等
+                  <span class="loan-choice__label">元利均等</span> <span class="loan-choice__hint">毎月の返済額が一定</span>
                 </label>
                 <label class="loan-choice">
                   <span class="dads-radio" data-size="sm">
                     <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="primary-repaymentType" value="equalPrincipal"></span>
                   </span>
-                  元金均等
+                  <span class="loan-choice__label">元金均等</span> <span class="loan-choice__hint">毎月の元金部分が一定（返済額は徐々に減る）</span>
                 </label>
               </div>
             </fieldset>
 
-            <div class="rate-segment-editor" data-borrower="primary">
-              <h3 class="loan-section__title">金利区間</h3>
-              <div class="rate-segments" data-rate-segments></div>
-              <div class="rate-segments__actions">
-                <button class="dads-button" data-size="sm" data-type="outline" type="button" data-action="add-segment">金利区間を追加</button>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -101,7 +102,7 @@
               <label class="dads-form-control-label__label" for="secondary-principal">借入金額（円）</label>
               <div>
                 <span class="dads-input-text">
-                  <input id="secondary-principal" class="dads-input-text__input" type="number" data-size="md" data-field="principal" min="1" step="1" value="30000000">
+                  <input id="secondary-principal" class="dads-input-text__input" type="text" inputmode="numeric" data-size="md" data-field="principal" min="1" step="1" value="30000000">
                 </span>
               </div>
             </div>
@@ -113,24 +114,17 @@
                   <span class="dads-radio" data-size="sm">
                     <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="secondary-repaymentType" value="equalPayment" checked></span>
                   </span>
-                  元利均等
+                  <span class="loan-choice__label">元利均等</span> <span class="loan-choice__hint">毎月の返済額が一定</span>
                 </label>
                 <label class="loan-choice">
                   <span class="dads-radio" data-size="sm">
                     <span class="dads-radio__radio"><input class="dads-radio__input" type="radio" data-field="repaymentType" name="secondary-repaymentType" value="equalPrincipal"></span>
                   </span>
-                  元金均等
+                  <span class="loan-choice__label">元金均等</span> <span class="loan-choice__hint">毎月の元金部分が一定（返済額は徐々に減る）</span>
                 </label>
               </div>
             </fieldset>
 
-            <div class="rate-segment-editor" data-borrower="secondary">
-              <h3 class="loan-section__title">金利区間</h3>
-              <div class="rate-segments" data-rate-segments></div>
-              <div class="rate-segments__actions">
-                <button class="dads-button" data-size="sm" data-type="outline" type="button" data-action="add-segment">金利区間を追加</button>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -177,7 +171,9 @@
         <section class="loan-section" aria-labelledby="result-title">
           <h2 id="result-title" class="loan-section__title">計算結果</h2>
           <p>総返済額: <span id="summary-total-payment">―</span>円</p>
-          <p>月々返済額（初回）: <span id="summary-first-month-payment">―</span>円</p>
+          <p>月々返済額（初回）: <span id="summary-first-month-payment">―</span>円（<span id="summary-first-month-period">―</span>）</p>
+          <p>月々返済額（最大）: <span id="summary-max-payment">―</span>円（<span id="summary-max-period">―</span>）</p>
+          <p>月々返済額（最小）: <span id="summary-min-payment">―</span>円（<span id="summary-min-period">―</span>）</p>
           <div class="chart-container"><canvas id="balance-chart" aria-label="借入残高推移グラフ"></canvas></div>
           <div class="chart-container"><canvas id="yearly-chart" aria-label="年間返済額グラフ"></canvas></div>
         </section>

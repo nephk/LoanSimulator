@@ -14,15 +14,26 @@ export function renderBalanceChart(canvas, monthly) {
     type: 'line',
     data: {
       labels: monthly.map((record) => record.monthIndex),
-      datasets: [{
-        label: '借入残高（円）',
-        data: monthly.map((record) => record.balance),
-        borderColor: '#264af4',
-        backgroundColor: 'rgba(38, 74, 244, 0.12)',
-        fill: true,
-        pointRadius: 0,
-        tension: 0.15,
-      }],
+      datasets: [
+        {
+          label: '借入残高（円）',
+          data: monthly.map((record) => record.balance),
+          borderColor: '#264af4',
+          backgroundColor: 'rgba(38, 74, 244, 0.12)',
+          fill: true,
+          pointRadius: 0,
+          tension: 0.15,
+        },
+        {
+          label: '月々の返済額（円）',
+          data: monthly.map((record) => record.payment),
+          yAxisID: 'y1',
+          borderColor: '#ff8d44',
+          backgroundColor: '#ff8d44',
+          pointRadius: 0,
+          tension: 0.15,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -36,6 +47,17 @@ export function renderBalanceChart(canvas, monthly) {
         y: {
           beginAtZero: true,
           title: { display: true, text: '残高（円）' },
+          ticks: {
+            callback: (value) => Number(value).toLocaleString('ja-JP'),
+          },
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          title: { display: true, text: '月々の返済額（円）' },
+          grid: {
+            drawOnChartArea: false,
+          },
           ticks: {
             callback: (value) => Number(value).toLocaleString('ja-JP'),
           },
