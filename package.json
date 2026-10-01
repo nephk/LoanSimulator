@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "node tests/rate-segment.e2e.js"
   },
   "dependencies": {
     "@digital-go-jp/tailwind-theme-plugin": "^1.0.1",

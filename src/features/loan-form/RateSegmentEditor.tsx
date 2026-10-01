@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '../../components/dads/Button';
 import { Input } from '../../components/dads/Input';
 import { Label } from '../../components/dads/Label';
@@ -11,24 +12,36 @@ function getRemainingYears(segments: RateSegment[], termYears: number) {
 }
 
 export function RateSegmentEditor({ termYears, segments, onChange }: { termYears: number; segments: RateSegment[]; onChange: (segments: RateSegment[]) => void }) {
+  const [rateDrafts, setRateDrafts] = useState<Record<number, string>>({});
   const remainingYears = getRemainingYears(segments, termYears);
   const update = (index: number, field: keyof RateSegment, value: string) => {
+    const currentValue = segments[index][field];
     let numValue = Number(value);
 
-    if (field === 'years' && segments.length > 1) {
-      // Find sum of all other segments, excluding the current one and the last one
-      const otherSegmentsSum = segments.reduce((sum, s, idx) => {
-        return (idx !== index && idx !== segments.length - 1) ? sum + s.years : sum;
-      }, 0);
-      const maxAllowed = Math.max(1, termYears - otherSegmentsSum - 1); // at least 1 year for the last segment
-      numValue = Math.max(1, Math.min(maxAllowed, numValue));
+    // A number input can temporarily contain an empty or otherwise invalid value
+    // while it is being edited. Keep the last valid value instead of propagating
+    // NaN into the simulation.
+    if (!Number.isFinite(numValue)) numValue = currentValue;
+
+    if (field === 'years') {
+      numValue = Math.round(numValue);
+      if (segments.length > 1) {
+        // Reserve at least one year for the automatically synchronized last segment.
+        const otherSegmentsSum = segments.reduce((sum, segment, segmentIndex) => (
+          segmentIndex !== index && segmentIndex !== segments.length - 1 ? sum + segment.years : sum
+        ), 0);
+        const maxAllowed = Math.max(1, termYears - otherSegmentsSum - 1);
+        numValue = Math.max(1, Math.min(maxAllowed, numValue));
+      } else {
+        numValue = Math.max(1, Math.min(termYears, numValue));
+      }
     }
 
     const next = segments.map((segment, segmentIndex) => segmentIndex === index ? { ...segment, [field]: numValue } : segment);
 
-    // Synchronize the last segment's years
+    // Synchronize the last segment's years whenever a user edits a preceding one.
     if (field === 'years' && next.length > 1) {
-      const totalExceptLast = next.slice(0, -1).reduce((sum, s) => sum + s.years, 0);
+      const totalExceptLast = next.slice(0, -1).reduce((sum, segment) => sum + segment.years, 0);
       const lastIndex = next.length - 1;
       next[lastIndex] = { ...next[lastIndex], years: Math.max(1, termYears - totalExceptLast) };
     }
@@ -36,13 +49,43 @@ export function RateSegmentEditor({ termYears, segments, onChange }: { termYears
     onChange(next);
   };
   const add = () => {
-    if (remainingYears === null || remainingYears <= 0) return;
-    const rate = segments.at(-1)?.annualRatePercent ?? 1;
-    onChange([...segments, { years: remainingYears, annualRatePercent: rate }]);
+    if (!Number.isInteger(termYears) || termYears < 2 || remainingYears === null) return;
+    setRateDrafts({});
+
+    if (remainingYears > 0) {
+      const rate = segments.at(-1)?.annualRatePercent ?? 1;
+      onChange([...segments, { years: remainingYears, annualRatePercent: rate }]);
+      return;
+    }
+
+    // When all years are already allocated, split the last segment that has at
+    // least two years. This keeps the total unchanged and makes it possible to
+    // add a third, fourth, and subsequent segment as long as there is a year to
+    // split. The newly inserted segment becomes the new final auto-synced one.
+    const splitIndex = [...segments].findLastIndex((segment) => segment.years >= 2);
+    if (splitIndex < 0) return;
+    const segment = segments[splitIndex];
+    const next = [
+      ...segments.slice(0, splitIndex),
+      { ...segment, years: segment.years - 1 },
+      { ...segment, years: 1 },
+      ...segments.slice(splitIndex + 1),
+    ];
+    onChange(next);
   };
   const remove = (index: number) => {
     if (segments.length <= 1) return;
-    onChange(segments.filter((_, segmentIndex) => segmentIndex !== index));
+    setRateDrafts({});
+    const next = segments.filter((_, segmentIndex) => segmentIndex !== index);
+    if (next.length === 1) {
+      onChange([{ ...next[0], years: termYears }]);
+      return;
+    }
+
+    const totalExceptLast = next.slice(0, -1).reduce((sum, segment) => sum + segment.years, 0);
+    const lastIndex = next.length - 1;
+    next[lastIndex] = { ...next[lastIndex], years: Math.max(1, termYears - totalExceptLast) };
+    onChange(next);
   };
 
   return (
@@ -91,9 +134,17 @@ export function RateSegmentEditor({ termYears, segments, onChange }: { termYears
                     min={0}
                     max={20}
                     step={0.001}
-                    value={segment.annualRatePercent}
+                    value={rateDrafts[index] ?? String(segment.annualRatePercent)}
                     data-rate-field='annualRatePercent'
-                    onChange={(event) => update(index, 'annualRatePercent', event.target.value)}
+                    onChange={(event) => {
+                      // Keep the visible draft while typing (for example `1.`),
+                      // but remove the leading zero that appears after editing
+                      // the controlled zero value (`01.5`).
+                      const rawValue = event.target.value;
+                      const normalizedValue = rawValue.replace(/^0+(?=\d)/, '');
+                      setRateDrafts((drafts) => ({ ...drafts, [index]: rawValue === '' ? '0' : normalizedValue }));
+                      update(index, 'annualRatePercent', normalizedValue);
+                    }}
                     className='w-full text-right font-medium'
                   />
                   <span className='text-xs font-semibold text-solid-gray-800 shrink-0'>%</span>
@@ -123,7 +174,7 @@ export function RateSegmentEditor({ termYears, segments, onChange }: { termYears
           variant='outline'
           type='button'
           data-action='add-segment'
-          disabled={remainingYears === null || remainingYears <= 0}
+          disabled={remainingYears === null || (remainingYears <= 0 && !segments.some((segment) => segment.years >= 2))}
           onClick={add}
           className='hover:bg-solid-gray-100 transition-all duration-150 text-xs font-semibold'
         >

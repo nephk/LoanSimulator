@@ -3,6 +3,7 @@ node_modules/
 design-system-example-components-react/
 .playwright-mcp/
 .playwright-browsers/
-tests/
+tests/screenshots/
+tests/reports/
 
 dist/

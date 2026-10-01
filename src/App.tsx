@@ -9,7 +9,7 @@ export function App() {
             Digital Design System
           </span>
           <span className='text-xs font-medium text-solid-gray-500'>
-            v1.2
+            v1.3
           </span>
         </div>
         <h1 className='mb-4 text-std-36B-140 text-solid-gray-900 tracking-tight lg:text-5xl lg:font-bold lg:leading-tight'>
