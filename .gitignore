@@ -1,6 +1,8 @@
 .DS_Store
 node_modules/
-design-system-example-components-html/
+design-system-example-components-react/
 .playwright-mcp/
 .playwright-browsers/
 tests/
+
+dist/

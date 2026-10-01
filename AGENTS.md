@@ -24,24 +24,33 @@
 - `SPEC.md` — `idea.md` を整理した要件定義
 - `PLAN.md` — 実装計画（技術方針・フェーズ分け）
 - `IMPLEMENT.md` — ユーザーテスト結果をもとにした修正・追加要望のメモ
-- `index.html` — シミュレーション画面（唯一のページ）
-- `src/app.js` — フォーム⇄計算⇄グラフの結線
+- `index.html` — ViteのエントリHTML
+- `src/main.tsx`, `src/App.tsx` — Reactエントリとアプリシェル
+- `src/components/dads/` — DADS Reactコンポーネントのコピー
+- `src/features/loan-form/` — フォーム、結果表示、チャートのReactコンポーネント
 - `src/amortization.js` — 返済計算ロジック（純粋関数）
 - `src/amortization.test.js` — `node --test` によるユニットテスト
-- `src/charts.js` — Chart.js 呼び出しラッパー
-- `src/style.css` — DADSトークン／コンポーネントCSS + レイアウト
-- `design-system-example-components-html/` — 参照用にベンダリングされたリポジトリ（独自の `.git` を持つ）。アプリ本体の一部ではない
+- `src/charts.ts` — Chart.js呼び出しラッパー
+- `src/index.css` — Tailwind CSSエントリ
+- `design-system-example-components-react/` — DADS Reactコンポーネントの参照用リポジトリ
 
 ## 開発コマンド
 
-### ブラウザ動作確認（ローカルサーバー起動）
+### 開発サーバー・ビルド
 
 ```bash
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
 
 起動後、ブラウザで **http://localhost:8080** を開く。
-ビルドステップは不要（素のHTML/CSS/JS構成）。
+
+本番ビルドとプレビュー:
+
+```bash
+npm run build
+npm run preview
+```
 
 > **キャッシュに注意**: JS・CSSの変更がブラウザに反映されない場合はハードリロードを行う。
 > - Mac: **⌘ + Shift + R**
@@ -58,20 +67,11 @@ node --test src/amortization.test.js
 
 住宅ローンの契約前に、様々な借り入れ条件を素早く比較検討するための返済シミュレーターです。詳細な要件は `SPEC.md`、実装計画は `PLAN.md` を参照してください（このファイルでは要件を重複して記載しない）。
 
-## DADS参照リポジトリ（`design-system-example-components-html/`）
+## DADS参照リポジトリ（`design-system-example-components-react/`）
 
-これは `digital-go-jp/design-system-example-components-html` をベンダリングしたものです。DADSコンポーネントをフレームワーク非依存のHTML/CSS/JSで実装した参照実装であり、DADS準拠のUIを作る際の参考として置かれています。このディレクトリ内のファイルを実際に触る際は、独自の `AGENTS.md` を読んでください。これは独自の履歴を持つ別のgitチェックアウトであり、パターンを参考にするための参照ライブラリとして扱い、気軽に変更しないこと。
+これは `digital-go-jp/design-system-example-components` のReact版参照実装です。DADS Reactコンポーネントをコピーする際の参照ライブラリとして扱い、変更しないでください。このディレクトリ内のファイルを実際に触る際は、独自の `AGENTS.md` を読んでください。
 
 主なポイント（詳細はその `AGENTS.md` を参照）:
 
-- **構成**: `src/components/<name>/` に各コンポーネントの `.css`, `.html`, `.js`, `.stories.ts`, `.vrt.js`/`.test.js`/`.unit.js`, `.mdx` が格納される。`src/helpers/` にTSユーティリティ、`src/global.css` にデザイントークン。
-- **コマンド**（`design-system-example-components-html/` 内で実行）:
-  ```bash
-  npm run storybook              # 開発用サーバー起動（localhost:6006）
-  npm test                       # Vitest + Playwright VRT を全実行
-  npm run format                 # Biome format --write
-  npx playwright test src/components/button/button.vrt.js   # 単一VRTテスト
-  npx playwright test -g "Normalize.css"                     # 名前指定で単一VRTテスト
-  ```
-- **規約**: `dads-` プレフィックス付きBEM CSS、data属性によるモディファイア（例: `[data-type="solid-fill"]`）／Shadow DOMなしのCustom Elements（`disconnectedCallback` でリスナー解除）／`rem` は `calc(px / 16 * 1rem)` パターンで指定、`px` はボーダーのみ／WCAG 2.2 AA準拠を目標に、forced-colors・reduced-motionに対応。
-- テストはビジュアルリグレッションテスト（VRT）で、複数のCSSリセットライブラリ（Normalize.css, Bootstrap Reboot, Tailwind Preflight, Eric Meyer's Reset, kiso.css）間でコンポーネントが同一に表示されることを検証する。
+- **構成**: `src/components/<name>/` にReactコンポーネントの`.tsx`/`.ts`とTailwindクラスが格納される。
+- **規約**: コピーしたReactコンポーネントのTailwindクラスを変更せず、必要な依存コンポーネントも併せてコピーする。アプリ側もTypeScriptとTailwindを使用し、WCAG 2.2 AA準拠を目標にする。
