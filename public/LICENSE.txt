@@ -1,0 +1,17 @@
+Copyright (c) 2026 neph. All Rights Reserved.
+
+Unauthorized copying, distribution, or use of this website or its source
+code, in whole or in part, is strictly prohibited without prior written
+permission from the copyright holder.
+
+-------------------------------------------------------------------------------
+
+Third-Party Components
+
+The following third-party material is included in this website under its
+original license terms. See THIRD_PARTY_NOTICES.md for full details.
+
+  @digital-go-jp/design-system-example-components-react
+  Source:  https://github.com/digital-go-jp/design-system-example-components
+  License: MIT License
+  Files:   src/components/dads/

@@ -1,0 +1,9 @@
+export type LoanType = 'single' | 'pair';
+export type RepaymentType = 'equalPayment' | 'equalPrincipal';
+export type RateSegment = { years: number; annualRatePercent: number };
+export type BorrowerInput = { principal: number; repaymentType: RepaymentType };
+export type BonusPayment = { enabled: boolean; amountPerPayment: number; months: number[] };
+export type SimulationInput = { loanType: LoanType; termYears: number; rateSegments: RateSegment[]; borrowers: BorrowerInput[]; bonus: BonusPayment };
+export type MonthlyRecord = { monthIndex: number; payment: number; principalPaid: number; interestPaid: number; balance: number };
+export type YearlyRecord = { year: number; totalPayment: number; principalPaid: number; interestPaid: number };
+export type SimulationResult = { totalPayment: number; monthly: MonthlyRecord[]; yearly: YearlyRecord[] };
